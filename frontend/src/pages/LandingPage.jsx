@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
 import {
   ArrowRight,
@@ -72,6 +73,7 @@ const steps = [
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   return (
     <div className="landing">
@@ -125,7 +127,14 @@ export default function LandingPage() {
           animate="visible"
           custom={3}
         >
-          <button className="hero__btn-primary" onClick={() => navigate('/workspace')}>
+          <button
+            className="hero__btn-primary"
+            onClick={() =>
+              isAuthenticated
+                ? navigate('/workspace')
+                : navigate('/auth', { state: { from: '/workspace' } })
+            }
+          >
             <span>Start Analyzing</span>
             <ArrowRight size={18} />
           </button>
@@ -419,6 +428,106 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ===== FAQs ===== */}
+      <section className="faqs" id="faqs">
+        <div className="faqs__inner">
+          <div className="faqs__header">
+            <motion.p
+              className="features__label"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-100px' }}
+              transition={{ duration: 0.6 }}
+            >
+              FAQs
+            </motion.p>
+            <motion.h2
+              className="features__title"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-100px' }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+            >
+              Frequently asked questions about <em style={{ fontStyle: 'italic', color: 'var(--accent)' }}>TrueDocs</em>
+            </motion.h2>
+            <motion.p
+              className="features__desc"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-100px' }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              Answers to the most common questions about security, privacy, supported files, and how to get started.
+            </motion.p>
+          </div>
+
+          <div className="faqs__grid">
+            {[
+              {
+                q: 'Is my data private and secure?',
+                a: 'Yes. Documents are encrypted in transit (TLS) and at rest. Access is restricted to your account and we never share or sell your data. See our Privacy Policy for full details.',
+              },
+              {
+                q: 'Which file formats do you support?',
+                a: 'We support PDF, DOC, DOCX, TXT, MD, CSV, XLS, XLSX and most common text-based formats. If you have a special format, contact support.',
+              },
+              {
+                q: 'Do you use my documents to train models?',
+                a: 'No. We do not use your documents to train our models unless you explicitly opt in. Your content remains private and is not included in training datasets.',
+              },
+              {
+                q: 'What is the maximum file size?',
+                a: 'Individual files up to 50 MB are supported in the UI. Very large documents may be truncated for storage — we show status and warnings if truncation occurs.',
+              },
+              {
+                q: 'How long are documents stored?',
+                a: 'You can delete documents at any time. By default documents are retained until you delete them; enterprise retention policies can be configured on paid plans.',
+              },
+              {
+                q: 'Can I share access with teammates?',
+                a: 'Team and enterprise sharing is available on paid plans. Contact sales to enable multi-user workspaces and role-based access controls.',
+              },
+              {
+                q: 'How does Google sign-in work?',
+                a: "You can sign in with Google OAuth. During sign-in we never store your Google password; we only save your profile information and a secure session token.",
+              },
+              {
+                q: 'What happens if processing fails?',
+                a: 'If a document cannot be processed we mark it as an error and store a friendly message. You can re-upload or contact support with the file details for help.',
+              },
+              {
+                q: 'Is there an API?',
+                a: 'API access is available for integration and automation on higher-tier plans. Please contact us for API keys and documentation.',
+              },
+              {
+                q: 'Can I permanently delete my account and data?',
+                a: 'Yes. You can delete individual documents or your entire account. Account deletion removes your data according to our privacy policy and applicable laws.',
+              },
+              {
+                q: 'Do you retain backups?',
+                a: 'We maintain system backups for disaster recovery. When you request data deletion we follow secure deletion procedures and comply with legal retention rules.',
+              },
+              {
+                q: 'Can I use TrueDocs offline?',
+                a: 'No — TrueDocs is a cloud-based service that requires a network connection to upload and analyze documents. Contact us for on-prem or private-cloud enterprise options.',
+              },
+            ].map((item, i) => (
+              <motion.div
+                key={item.q}
+                className="faq-card"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-80px' }}
+                transition={{ duration: 0.55, delay: i * 0.06 }}
+              >
+                <h3 className="faq-card__q">{item.q}</h3>
+                <p className="faq-card__a">{item.a}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ===== CTA ===== */}
       <section className="cta-section">
         <motion.div
@@ -430,11 +539,17 @@ export default function LandingPage() {
         >
           <h2 className="cta-section__title">Ready to unlock your documents?</h2>
           <p className="cta-section__desc">
-            Start a conversation with your documents today. No signup required.
+            {isAuthenticated
+              ? 'Start a conversation with your documents today. No signup required.'
+              : 'Sign in to upload and analyze documents. You will be redirected to sign in.'}
           </p>
           <button
             className="hero__btn-primary"
-            onClick={() => navigate('/workspace')}
+            onClick={() =>
+              isAuthenticated
+                ? navigate('/workspace')
+                : navigate('/auth', { state: { from: '/workspace' } })
+            }
             style={{ position: 'relative' }}
           >
             <span>Upload Your First Document</span>
@@ -464,8 +579,26 @@ export default function LandingPage() {
               <div className="footer__links">
                 <a href="#features" className="footer__link">Features</a>
                 <a href="#how-it-works" className="footer__link">How It Works</a>
-                <button className="footer__link" onClick={() => navigate('/workspace')}>Workspace</button>
-                <button className="footer__link" onClick={() => navigate('/workspace')}>Upload Document</button>
+                <button
+                  className="footer__link"
+                  onClick={() =>
+                    isAuthenticated
+                      ? navigate('/workspace')
+                      : navigate('/auth', { state: { from: '/workspace' } })
+                  }
+                >
+                  Workspace
+                </button>
+                <button
+                  className="footer__link"
+                  onClick={() =>
+                    isAuthenticated
+                      ? navigate('/workspace')
+                      : navigate('/auth', { state: { from: '/workspace' } })
+                  }
+                >
+                  Upload Document
+                </button>
               </div>
             </div>
 

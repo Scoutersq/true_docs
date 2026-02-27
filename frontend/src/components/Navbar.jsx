@@ -113,6 +113,43 @@ export default function Navbar() {
       >
         {mobileOpen ? <X size={22} /> : <Menu size={22} />}
       </button>
+
+      {/* Mobile panel */}
+      <div className={`navbar__mobile-panel ${mobileOpen ? 'open' : ''}`}>
+        <div className="navbar__mobile-inner">
+          <div className="navbar__mobile-links">
+            {!isWorkspace && (
+              <>
+                <button className="navbar__mobile-link" onClick={() => { handleAnchorClick('#features'); setMobileOpen(false); }}>Features</button>
+                <button className="navbar__mobile-link" onClick={() => { handleAnchorClick('#how-it-works'); setMobileOpen(false); }}>How It Works</button>
+              </>
+            )}
+
+            {isAuthenticated ? (
+              <>
+                <button className="navbar__mobile-link" onClick={() => { navigate('/dashboard'); setMobileOpen(false); }}>
+                  Dashboard
+                </button>
+                <div className="navbar__mobile-user">
+                  {user?.avatar && <img src={user.avatar} alt={user.name} className="navbar__avatar" referrerPolicy="no-referrer" />}
+                  <span className="navbar__user-name">{user?.name?.split(' ')[0]}</span>
+                </div>
+                <button className="navbar__mobile-link" onClick={() => { logout(); setMobileOpen(false); }}>
+                  Logout
+                </button>
+              </>
+            ) : (
+              <button className="navbar__mobile-link" onClick={() => { navigate('/auth'); setMobileOpen(false); }}>
+                Log In
+              </button>
+            )}
+
+            <button className="navbar__mobile-cta" onClick={() => { handleCtaClick(); setMobileOpen(false); }}>
+              {isWorkspace ? 'New Document' : 'Get Started'}
+            </button>
+          </div>
+        </div>
+      </div>
     </motion.nav>
   );
 }

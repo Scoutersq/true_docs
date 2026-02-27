@@ -45,6 +45,12 @@ export function AuthProvider({ children }) {
     window.location.href = `${API_URL}/api/auth/google`;
   }, []);
 
+  // Allow passing a `from` path so OAuth can preserve return location
+  const loginWithGoogleFrom = useCallback((from = '/workspace') => {
+    const q = new URLSearchParams({ from }).toString();
+    window.location.href = `${API_URL}/api/auth/google?${q}`;
+  }, []);
+
   const handleAuthCallback = useCallback((token) => {
     localStorage.setItem('token', token);
     fetchUser(token);
@@ -100,6 +106,7 @@ export function AuthProvider({ children }) {
         loading,
         isAuthenticated: !!user,
         loginWithGoogle,
+        loginWithGoogleFrom,
         loginWithCredentials,
         signupWithCredentials,
         handleAuthCallback,

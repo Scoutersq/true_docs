@@ -92,15 +92,16 @@ router.get('/debug', (req, res) => {
   });
 });
 
-// ─── Initiate Google OAuth ──────────────────────────────────────────
-router.get(
-  '/google',
+// ─── Initiate Google OAuth (preserve `from` in state) ───────────────
+router.get('/google', (req, res, next) => {
+  const from = req.query.from || '/workspace';
   passport.authenticate('google', {
     scope: ['openid', 'profile', 'email'],
     accessType: 'offline',
     prompt: 'consent',
-  })
-);
+    state: JSON.stringify({ from }),
+  })(req, res, next);
+});
 
 // ─── Google OAuth Callback ──────────────────────────────────────────
 router.get(
@@ -121,8 +122,22 @@ router.get(
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
-    // Redirect to frontend — the frontend reads the token from the URL
-    res.redirect(`${process.env.CLIENT_URL}/auth/callback?token=${token}`);
+    // Try to preserve original `from` path (passed in state)
+    let from = '/workspace';
+    try {
+      const rawState = req.query.state;
+      if (rawState) {
+        const parsed = JSON.parse(rawState);
+        if (parsed?.from) from = parsed.from;
+      }
+    } catch (e) {
+      // ignore parse errors and fall back to default
+    }
+
+    // Redirect to frontend — include token and from
+    res.redirect(
+      `${process.env.CLIENT_URL}/auth/callback?token=${token}&from=${encodeURIComponent(from)}`
+    );
   }
 );
 

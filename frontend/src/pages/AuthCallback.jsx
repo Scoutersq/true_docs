@@ -15,10 +15,11 @@ export default function AuthCallback() {
   useEffect(() => {
     const token = searchParams.get('token');
     const error = searchParams.get('error');
+    const from = searchParams.get('from') || '/workspace';
 
     if (token) {
       handleAuthCallback(token);
-      navigate('/workspace', { replace: true });
+      navigate(from, { replace: true });
     } else {
       // Auth failed — go back to login
       navigate(`/auth${error ? `?error=${error}` : ''}`, { replace: true });

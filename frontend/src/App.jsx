@@ -8,6 +8,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
 import AuthPage from './pages/AuthPage';
 import AuthCallback from './pages/AuthCallback';
 import Dashboard from './pages/Dashboard';
+import RequireAuth from './components/RequireAuth';
 
 function AppLayout() {
   const location = useLocation();
@@ -18,8 +19,8 @@ function AppLayout() {
       {!hideNavbar && <Navbar />}
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/workspace" element={<Workspace />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/workspace" element={<RequireAuth><Workspace /></RequireAuth>} />
+        <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/PrivacyPolicy" element={<PrivacyPolicy />} />
