@@ -1,0 +1,325 @@
+/* ═══════════════════════════════════════════════════════════
+   SlideViewer — Presentation-style viewer for AI-generated slides
+   ═══════════════════════════════════════════════════════════ */
+
+.slide-viewer {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  margin-top: var(--space-md);
+  max-height: 600px;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.slide-viewer--fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  margin: 0;
+  max-height: none;
+  border-radius: 0;
+  border: none;
+}
+
+/* ─── Header ──────────────────────────────────────────────── */
+.slide-viewer__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.slide-viewer__header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.slide-viewer__header-left svg {
+  color: var(--accent);
+}
+
+.slide-viewer__title {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.slide-viewer__counter {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  background: var(--bg-elevated);
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+}
+
+.slide-viewer__header-actions {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.slide-viewer__action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.slide-viewer__action-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+  border-color: var(--border-default);
+}
+
+.slide-viewer__action-btn--close:hover {
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.06);
+  border-color: rgba(220, 38, 38, 0.15);
+}
+
+/* ─── Slide Content ───────────────────────────────────────── */
+.slide-viewer__content {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  min-height: 320px;
+}
+
+.slide-viewer__slide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-lg);
+  padding: var(--space-xl) var(--space-2xl);
+  height: 100%;
+  overflow-y: auto;
+}
+
+.slide-viewer__slide-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+  margin: 0;
+}
+
+.slide-viewer--fullscreen .slide-viewer__slide-title {
+  font-size: 2rem;
+}
+
+/* ─── Diagram ─────────────────────────────────────────────── */
+.slide-viewer__diagram-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 720px;
+  padding: var(--space-lg);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: auto;
+}
+
+.slide-viewer__diagram {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.slide-viewer__diagram svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.slide-viewer__explanation {
+  font-size: 0.925rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  text-align: center;
+  max-width: 600px;
+  margin: 0;
+}
+
+.slide-viewer--fullscreen .slide-viewer__explanation {
+  font-size: 1.05rem;
+}
+
+/* ─── Navigation ──────────────────────────────────────────── */
+.slide-viewer__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-secondary);
+}
+
+.slide-viewer__nav-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.slide-viewer__nav-btn:hover:not(:disabled) {
+  color: var(--text-accent);
+  border-color: var(--border-accent);
+  background: var(--accent-dim);
+}
+
+.slide-viewer__nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.slide-viewer__dots {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.slide-viewer__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border-default);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.slide-viewer__dot--active {
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+  transform: scale(1.3);
+}
+
+.slide-viewer__dot:hover:not(.slide-viewer__dot--active) {
+  background: var(--text-tertiary);
+}
+
+/* ─── Mermaid shared styles ───────────────────────────────── */
+.mermaid-diagram {
+  display: flex;
+  justify-content: center;
+  overflow: auto;
+}
+
+.mermaid-diagram svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.mermaid-error {
+  background: rgba(220, 38, 38, 0.04);
+  border: 1px solid rgba(220, 38, 38, 0.15);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  overflow: auto;
+}
+
+.mermaid-error__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  margin-bottom: var(--space-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.mermaid-error__code {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+.mermaid-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-lg);
+  color: var(--text-tertiary);
+  font-size: 0.85rem;
+  justify-content: center;
+}
+
+.mermaid-loading__spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border-default);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ─── Inline mermaid in chat bubbles ─────────────────────── */
+.chat__bubble--ai .mermaid-diagram {
+  margin: var(--space-md) 0;
+  padding: var(--space-md);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+/* ─── Responsive ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .slide-viewer {
+    border-radius: var(--radius-lg);
+    max-height: 500px;
+  }
+
+  .slide-viewer__slide {
+    padding: var(--space-lg) var(--space-md);
+    gap: var(--space-md);
+  }
+
+  .slide-viewer__slide-title {
+    font-size: 1.2rem;
+  }
+
+  .slide-viewer__nav-btn span {
+    display: none;
+  }
+
+  .slide-viewer__nav-btn {
+    padding: 8px 12px;
+  }
+
+  .slide-viewer__diagram-wrapper {
+    padding: var(--space-md);
+  }
+}
