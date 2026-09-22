@@ -416,33 +416,6 @@
   line-height: 1.7;
 }
 
-/* Suggestion chips */
-.chat__suggestions {
-  display: flex;
-  gap: var(--space-sm);
-  flex-wrap: wrap;
-  justify-content: center;
-  margin-top: var(--space-sm);
-}
-
-.chat__suggestion {
-  padding: 8px 18px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-  background: var(--bg-card);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-full);
-  transition: all var(--duration-fast);
-  cursor: pointer;
-}
-
-.chat__suggestion:hover {
-  color: var(--text-accent);
-  border-color: var(--border-accent);
-  background: var(--accent-dim);
-}
-
 /* ─── Desktop chatbar polish ────────────────────────────── */
 @media (min-width: 769px) {
   .chat__input-area {
@@ -528,16 +501,9 @@ html[data-theme='dark'] .chat__code-block code {
   padding: var(--space-lg) var(--space-md);
   background: var(--bg-secondary);
   border-radius: var(--radius-md);
-  margin: var(--space-md) 0;
-}
-
-.chat__templates-label {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-  margin: 0 0 var(--space-sm) 0;
-  letter-spacing: 0.5px;
-  font-weight: 600;
+  margin: var(--space-md) 0 110px;
+  position: relative;
+  z-index: 61;
 }
 
 .chat__templates-grid {

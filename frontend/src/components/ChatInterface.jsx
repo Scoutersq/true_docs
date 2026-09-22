@@ -7,13 +7,6 @@ import { Send, Sparkles, User, MessageSquare, Presentation, Loader, Copy, Check,
 import { useApp } from '../context/AppContext';
 import '../styles/ChatInterface.css';
 
-const SUGGESTIONS = [
-  'Summarize this document',
-  'What are the key points?',
-  'Explain the main argument',
-  'List all important dates',
-];
-
 // Feature 17: AI Prompt Templates
 const PROMPT_TEMPLATES = [
   { label: 'Summarize', prompt: 'Provide a comprehensive summary of this document in 3-4 paragraphs.' },
@@ -247,31 +240,14 @@ export default function ChatInterface() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Suggestion chips (show after first AI message, when there's only 1 message) */}
-      {chatMessages.length === 1 && chatMessages[0].role === 'assistant' && (
-        <motion.div
-          className="chat__suggestions"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.3 }}
-        >
-          {SUGGESTIONS.map((s) => (
-            <button key={s} className="chat__suggestion" onClick={() => sendMessage(s)}>
-              {s}
-            </button>
-          ))}
-        </motion.div>
-      )}
-
       {/* Feature 17: Prompt Templates */}
-      {chatMessages.length > 0 && (
+      {isFileReady && (
         <motion.div
           className="chat__templates"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          <p className="chat__templates-label">Quick Prompts:</p>
           <div className="chat__templates-grid">
             {PROMPT_TEMPLATES.map((template) => (
               <button
