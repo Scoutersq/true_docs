@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FileText,
@@ -9,6 +9,8 @@ import {
   ChevronRight,
   Loader2,
   AlertCircle,
+  Tag,
+  X,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import '../styles/HistorySidebar.css';
@@ -43,10 +45,43 @@ export default function HistorySidebar() {
     loadDocument,
     deleteDocument,
     startNewDocument,
+    loadMoreHistory,
+    hasMoreHistory,
+    addDocumentTag,
+    removeDocumentTag,
+    getDocumentTags,
   } = useApp();
 
   const [collapsed, setCollapsed] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [tagInputId, setTagInputId] = useState(null);
+  const [tagInput, setTagInput] = useState('');
+  const [filterTag, setFilterTag] = useState(null);
+  const listRef = useRef(null);
+
+  // Update CSS variable when sidebar is collapsed/expanded
+  useEffect(() => {
+    const sidebarWidth = collapsed ? '44px' : '280px';
+    document.documentElement.style.setProperty('--sidebar-width', sidebarWidth);
+  }, [collapsed]);
+
+  // Handle infinite scroll for lazy loading
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!listRef.current) return;
+      
+      const { scrollTop, scrollHeight, clientHeight } = listRef.current;
+      if (scrollHeight - scrollTop <= clientHeight + 50) {
+        loadMoreHistory();
+      }
+    };
+
+    const list = listRef.current;
+    if (list) {
+      list.addEventListener('scroll', handleScroll);
+      return () => list.removeEventListener('scroll', handleScroll);
+    }
+  }, [loadMoreHistory]);
 
   const handleDelete = async (e, docId) => {
     e.stopPropagation();
@@ -86,7 +121,7 @@ export default function HistorySidebar() {
           </div>
 
           {/* Document list */}
-          <div className="sidebar__list">
+          <div className="sidebar__list" ref={listRef}>
             {isHistoryLoading ? (
               <div className="sidebar__empty">
                 <Loader2 size={20} className="sidebar__spinner" />
@@ -133,6 +168,62 @@ export default function HistorySidebar() {
                       <span className="sidebar__item-meta">
                         {formatFileSize(doc.fileSize)} · {formatDate(doc.createdAt)}
                       </span>
+                      {/* Feature 13: Document Tags */}
+                      <div className="sidebar__item-tags">
+                        {getDocumentTags(doc._id).map((tag) => (
+                          <span key={tag} className="sidebar__tag">
+                            {tag}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeDocumentTag(doc._id, tag);
+                              }}
+                              className="sidebar__tag-remove"
+                            >
+                              <X size={10} />
+                            </button>
+                          </span>
+                        ))}
+                        {tagInputId === doc._id ? (
+                          <input
+                            type="text"
+                            className="sidebar__tag-input"
+                            placeholder="Add tag..."
+                            value={tagInput}
+                            onChange={(e) => setTagInput(e.target.value)}
+                            onBlur={() => {
+                              if (tagInput.trim()) {
+                                addDocumentTag(doc._id, tagInput.trim());
+                              }
+                              setTagInputId(null);
+                              setTagInput('');
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                if (tagInput.trim()) {
+                                  addDocumentTag(doc._id, tagInput.trim());
+                                }
+                                setTagInputId(null);
+                                setTagInput('');
+                              }
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            autoFocus
+                          />
+                        ) : (
+                          <button
+                            className="sidebar__tag-add"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setTagInputId(doc._id);
+                              setTagInput('');
+                            }}
+                            title="Add tag"
+                          >
+                            <Tag size={12} />
+                          </button>
+                        )}
+                      </div>
                     </div>
                     <span
                       className="sidebar__item-delete"
@@ -157,6 +248,27 @@ export default function HistorySidebar() {
               </AnimatePresence>
             )}
           </div>
+
+          {/* Load more button */}
+          {documentHistory.length > 0 && hasMoreHistory && (
+            <button
+              className="sidebar__load-more"
+              onClick={loadMoreHistory}
+              disabled={isHistoryLoading}
+              title="Load more documents"
+            >
+              {isHistoryLoading ? (
+                <>
+                  <Loader2 size={14} className="sidebar__spinner" />
+                  <span>Loading...</span>
+                </>
+              ) : (
+                <>
+                  <span>Load More</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
       )}
     </motion.aside>

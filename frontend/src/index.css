@@ -71,6 +71,43 @@
   --chat-max-width: 900px;
 }
 
+/* ===== Dark Mode ===== */
+html[data-theme='dark'] {
+  /* Backgrounds */
+  --bg-primary: #0F172A;
+  --bg-secondary: #1E293B;
+  --bg-tertiary: #334155;
+  --bg-card: #1E293B;
+  --bg-elevated: #334155;
+  --bg-glass: rgba(30, 41, 59, 0.7);
+
+  /* Accent — Emerald Green (lighter for dark mode) */
+  --accent: #10B981;
+  --accent-light: #34D399;
+  --accent-dim: rgba(16, 185, 129, 0.12);
+  --accent-glow: rgba(16, 185, 129, 0.1);
+  --accent-gradient: linear-gradient(135deg, #10B981 0%, #34D399 50%, #6EE7B7 100%);
+
+  /* Text */
+  --text-primary: #F1F5F9;
+  --text-secondary: #CBD5E1;
+  --text-tertiary: #94A3B8;
+  --text-accent: #34D399;
+
+  /* Borders */
+  --border-subtle: rgba(255, 255, 255, 0.04);
+  --border-default: rgba(255, 255, 255, 0.08);
+  --border-accent: rgba(16, 185, 129, 0.3);
+  --border-accent-strong: rgba(16, 185, 129, 0.5);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 40px rgba(16, 185, 129, 0.1);
+  --shadow-glow-strong: 0 0 80px rgba(16, 185, 129, 0.15);
+}
+
 /* ===== Reset ===== */
 *, *::before, *::after {
   margin: 0;

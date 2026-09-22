@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight, Presentation, Maximize2, Minimize2 } from 'lucide-react';
-import MermaidDiagram from './MermaidDiagram';
+import GraphvizDiagram from './GraphvizDiagram';
 import '../styles/SlideViewer.css';
 
 const slideVariants = {
@@ -81,7 +81,7 @@ export default function SlideViewer({ slides, onClose }) {
             <h2 className="slide-viewer__slide-title">{slide.title}</h2>
 
             <div className="slide-viewer__diagram-wrapper">
-              <MermaidDiagram chart={slide.diagram} className="slide-viewer__diagram" />
+              <GraphvizDiagram dot={slide.diagram} className="slide-viewer__diagram" />
             </div>
 
             <p className="slide-viewer__explanation">{slide.explanation}</p>

@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
-import { Send, Sparkles, User, MessageSquare, Presentation, Loader } from 'lucide-react';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { Send, Sparkles, User, MessageSquare, Presentation, Loader, Copy, Check, ThumbsUp, ThumbsDown, X } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import '../styles/ChatInterface.css';
 
@@ -12,6 +14,15 @@ const SUGGESTIONS = [
   'List all important dates',
 ];
 
+// Feature 17: AI Prompt Templates
+const PROMPT_TEMPLATES = [
+  { label: 'Summarize', prompt: 'Provide a comprehensive summary of this document in 3-4 paragraphs.' },
+  { label: 'Extract Key Points', prompt: 'List all the key points and main ideas from this document in bullet format.' },
+  { label: 'Create Outline', prompt: 'Create a detailed outline with main sections and subsections for this document.' },
+  { label: 'Q&A', prompt: 'Generate 5-10 important questions and answers based on this document.' },
+  { label: 'Executive Summary', prompt: 'Create a concise executive summary (200 words max) of this document.' },
+];
+
 function formatTime(date) {
   return date.toLocaleTimeString('en-US', {
     hour: '2-digit',
@@ -20,12 +31,42 @@ function formatTime(date) {
   });
 }
 
+// Custom code block component with syntax highlighting
+const CodeBlock = ({ node, inline, className, children, ...props }) => {
+  const match = /language-(\w+)/.exec(className || '');
+  const language = match ? match[1] : 'text';
+
+  if (inline) {
+    return (
+      <code className="chat__inline-code" {...props}>
+        {children}
+      </code>
+    );
+  }
+
+  return (
+    <div className="chat__code-block">
+      <SyntaxHighlighter
+        style={oneDark}
+        language={language}
+        PreTag="pre"
+        {...props}
+      >
+        {String(children).replace(/\n$/, '')}
+      </SyntaxHighlighter>
+    </div>
+  );
+};
+
 export default function ChatInterface() {
   const {
     chatMessages, isChatLoading, isFileReady, sendMessage,
-    isSlidesLoading, generateSlides,
+    isSlidesLoading, generateSlides, cancelChatRequest, addMessageReaction,
+    totalTokensUsed, exportChatHistory,
   } = useApp();
   const [input, setInput] = useState('');
+  const [copiedId, setCopiedId] = useState(null);
+  const [showExportMenu, setShowExportMenu] = useState(false);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
 
@@ -57,6 +98,24 @@ export default function ChatInterface() {
       e.preventDefault();
       handleSend();
     }
+  };
+
+  const copyToClipboard = (text, messageId) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedId(messageId);
+      setTimeout(() => setCopiedId(null), 2000);
+    });
+  };
+
+  // Feature 17: Handle template selection
+  const handleTemplateSelect = (template) => {
+    sendMessage(template.prompt);
+  };
+
+  // Feature 11: Handle export
+  const handleExport = (format) => {
+    exportChatHistory(format);
+    setShowExportMenu(false);
   };
 
   // Empty state when no document uploaded
@@ -109,11 +168,55 @@ export default function ChatInterface() {
               <div className={`chat__avatar chat__avatar--${msg.role === 'assistant' ? 'ai' : 'user'}`}>
                 {msg.role === 'assistant' ? <Sparkles size={18} /> : <User size={18} />}
               </div>
-              <div>
+              <div className="chat__message-wrapper">
                 <div className={`chat__bubble chat__bubble--${msg.role === 'assistant' ? 'ai' : 'user'}`}>
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  <ReactMarkdown components={{ code: CodeBlock }}>
+                    {msg.content}
+                  </ReactMarkdown>
                 </div>
-                <p className="chat__timestamp">{formatTime(msg.timestamp)}</p>
+                <div className="chat__message-footer">
+                  <p className="chat__timestamp">{formatTime(msg.timestamp)}</p>
+                  {/* Feature 18: Display token usage */}
+                  {msg.tokens && (
+                    <p className="chat__token-count" title="Tokens used in this message">
+                      {msg.tokens} tokens
+                    </p>
+                  )}
+                  
+                  {/* Message Actions */}
+                  <div className="chat__message-actions">
+                    {/* Copy button */}
+                    <button
+                      className="chat__message-action"
+                      onClick={() => copyToClipboard(msg.content, msg.id)}
+                      title="Copy message"
+                    >
+                      {copiedId === msg.id ? <Check size={14} /> : <Copy size={14} />}
+                    </button>
+                    
+                    {/* Reactions (only for assistant messages) */}
+                    {msg.role === 'assistant' && msg.reactions && (
+                      <>
+                        <button
+                          className={`chat__reaction-btn ${msg.reactions.userReaction === 'like' ? 'active' : ''}`}
+                          onClick={() => addMessageReaction(msg.id, 'like')}
+                          title="Helpful"
+                        >
+                          <ThumbsUp size={14} />
+                          {msg.reactions.likes > 0 && <span>{msg.reactions.likes}</span>}
+                        </button>
+                        <button
+                          className={`chat__reaction-btn ${msg.reactions.userReaction === 'dislike' ? 'active' : ''}`}
+                          onClick={() => addMessageReaction(msg.id, 'dislike')}
+                          title="Not helpful"
+                        >
+                          <ThumbsDown size={14} />
+                          {msg.reactions.dislikes > 0 && <span>{msg.reactions.dislikes}</span>}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
             </motion.div>
           ))}
@@ -130,10 +233,13 @@ export default function ChatInterface() {
             <div className="chat__avatar chat__avatar--ai">
               <Sparkles size={18} />
             </div>
-            <div className="chat__typing-dots">
-              <span className="chat__typing-dot" />
-              <span className="chat__typing-dot" />
-              <span className="chat__typing-dot" />
+            <div className="chat__typing-content">
+              <div className="chat__typing-dots">
+                <span className="chat__typing-dot" />
+                <span className="chat__typing-dot" />
+                <span className="chat__typing-dot" />
+              </div>
+              <p className="chat__typing-text">AI is analyzing...</p>
             </div>
           </motion.div>
         )}
@@ -157,6 +263,31 @@ export default function ChatInterface() {
         </motion.div>
       )}
 
+      {/* Feature 17: Prompt Templates */}
+      {chatMessages.length > 0 && (
+        <motion.div
+          className="chat__templates"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <p className="chat__templates-label">Quick Prompts:</p>
+          <div className="chat__templates-grid">
+            {PROMPT_TEMPLATES.map((template) => (
+              <button
+                key={template.label}
+                className="chat__template-btn"
+                onClick={() => handleTemplateSelect(template)}
+                disabled={isChatLoading}
+                title={template.prompt}
+              >
+                {template.label}
+              </button>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
       {/* Input */}
       <div className="chat__input-area">
         <div className="chat__input-wrapper">
@@ -168,6 +299,7 @@ export default function ChatInterface() {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             rows={1}
+            disabled={isChatLoading}
           />
           <button
             className="chat__slides-btn"
@@ -177,14 +309,46 @@ export default function ChatInterface() {
           >
             {isSlidesLoading ? <Loader size={18} className="chat__slides-spinner" /> : <Presentation size={18} />}
           </button>
-          <button
-            className="chat__send-btn"
-            onClick={handleSend}
-            disabled={!input.trim() || isChatLoading}
-          >
-            <Send size={18} />
-          </button>
+          {isChatLoading ? (
+            <button
+              className="chat__send-btn chat__cancel-btn"
+              onClick={cancelChatRequest}
+              title="Cancel request"
+            >
+              <X size={18} />
+            </button>
+          ) : (
+            <button
+              className="chat__send-btn"
+              onClick={handleSend}
+              disabled={!input.trim()}
+            >
+              <Send size={18} />
+            </button>
+          )}
+          {/* Feature 11: Export button */}
+          <div className="chat__export-menu">
+            <button
+              className="chat__export-btn"
+              onClick={() => setShowExportMenu(!showExportMenu)}
+              disabled={chatMessages.length === 0}
+              title="Export chat history"
+            >
+              ↓
+            </button>
+            {showExportMenu && (
+              <div className="chat__export-dropdown">
+                <button onClick={() => handleExport('json')}>Export as JSON</button>
+                <button onClick={() => handleExport('csv')}>Export as CSV</button>
+                <button onClick={() => handleExport('txt')}>Export as TXT</button>
+              </div>
+            )}
+          </div>
         </div>
+        {/* Feature 18: Token usage display */}
+        {totalTokensUsed > 0 && (
+          <p className="chat__token-usage">Total tokens used: {totalTokensUsed}</p>
+        )}
       </div>
     </div>
   );

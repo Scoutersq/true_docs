@@ -2,14 +2,14 @@ const Groq = require('groq-sdk');
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-// Using llama-3.3-70b-versatile — best balance of quality, speed, and context on Groq
-const MODEL = 'llama-3.3-70b-versatile';
+// Keep the model configurable because Groq model availability changes over time.
+const MODEL = process.env.GROQ_MODEL || 'qwen/qwen3.8-27b';
 
 // ─── Token budget constants ─────────────────────────────────────────
-// llama-3.3-70b-versatile context: 128k tokens
+// qwen3.8-27b supports a large context window for document analysis.
 // 1 token ≈ 3.5 chars (conservative estimate)
 const RESPONSE_TOKENS = 4096;
-const SAFE_MAX_DOC_CHARS = 250_000; // ~71k tokens — uses more of the 128k context for better coverage
+const SAFE_MAX_DOC_CHARS = 20_000; // Keep requests below the account's 7k input-token limit.
 
 // ─── System prompt for document analysis ────────────────────────────
 const SYSTEM_PROMPT = `You are TrueDocs — an expert AI document analyst and research assistant.
@@ -33,110 +33,182 @@ CONSTRAINTS:
 - If you are unsure, say "Based on the document provided, I couldn't find specific information about that" rather than guessing.
 - Do not reference your training data or knowledge outside the document unless the user explicitly asks for general context.
 - Keep responses focused on what the user asked.
-- NEVER output Mermaid diagram code, graph notation, flowchart syntax, or any diagram markup in your responses. If the user asks for diagrams or visual representations, tell them to click the diagram/presentation button in the chat input bar instead.`;
+- NEVER output diagram code, graph notation, flowchart syntax, DOT/Graphviz markup, or any diagram markup in your responses. If the user asks for diagrams or visual representations, tell them to click the diagram/presentation button in the chat input bar instead.`;
 
 // ─── Slide generation prompt ────────────────────────────────────────
-const SLIDES_SYSTEM_PROMPT = `You are TrueDocs — an expert at creating visual diagram presentations from document conversations.
+const SLIDES_SYSTEM_PROMPT = `You are TrueDocs — an expert at creating visual diagram presentations from conversations about documents.
 
-Your task is to analyze a document and conversation, then create visual diagrams explaining key topics.
+YOUR TASK: Analyze the conversation between user and AI about a document, then create Graphviz DOT diagrams that visualize the KEY TOPICS DISCUSSED. Diagrams must directly reflect what was asked about and explained — not just generic info.
 
 OUTPUT FORMAT:
-Return ONLY a valid JSON array. No text before or after. Each element:
-- "title": Slide title (max 8 words)
-- "diagram": A valid Mermaid.js diagram string (see STRICT RULES below)
-- "explanation": 2-3 sentence explanation of the diagram
+Return ONLY a valid JSON array (no markdown wrapping, no text before or after). Each element:
+- "title": Slide title (max 8 words) — should reference a conversation topic
+- "diagram": A valid Graphviz DOT language string (follow SYNTAX RULES below EXACTLY)
+- "explanation": 2-3 sentence explanation connecting the diagram to what was discussed
 
-STRICT MERMAID SYNTAX RULES — follow exactly:
-1. FLOWCHARTS: Start with "graph TD" or "graph LR" on its own line. Each connection on its own line.
-   - Node IDs MUST be single letters or short alphanumeric (A, B, C, nodeA, step1). NO spaces in IDs.
-   - Labels go in brackets: A[My Label] --> B[Other Label]
-   - ONLY these bracket types: [square] (round) {diamond}
-   - Arrow types: --> or --- or -.-> only
-   - Edge labels: A -->|some text| B
-   - Example:
-     graph TD
-     A[Start Process] --> B[Step One]
-     B --> C{Decision}
-     C -->|Yes| D[Do This]
-     C -->|No| E[Do That]
-   - Maximum 6-10 nodes per flowchart
+GRAPHVIZ DOT SYNTAX — FOLLOW THESE RULES EXACTLY:
 
-2. SEQUENCE DIAGRAMS: Start with "sequenceDiagram" on its own line.
-   - participant Name (no special chars)
-   - Name->>Other: Message text
-   - Use ->> or -->> only
-   - Example:
-     sequenceDiagram
-     participant User
-     participant System
-     User->>System: Upload file
-     System-->>User: Confirm receipt
+1. DIRECTED GRAPHS (use for most slides):
+   Always start with: digraph G {
+   End with: }
+   Use -> for edges (NOT --> or any unicode arrows).
+   Node IDs: simple lowercase identifiers (a, b, c, node1, step2). NO spaces in IDs.
+   Labels use the label attribute: a [label="My Label"]
+   Edge labels: a -> b [label="connects to"]
+   VALID EXAMPLE:
+     digraph G {
+       rankdir=TB;
+       node [shape=box, style="rounded,filled", fillcolor="#d1fae5", fontname="Arial"];
+       edge [color="#059669"];
+       a [label="Main Topic"];
+       b [label="First Point"];
+       c [label="Second Point"];
+       d [label="Detail One"];
+       a -> b;
+       a -> c;
+       b -> d;
+     }
 
-3. PIE CHARTS: Start with "pie title My Title" on its own line.
-   - Each slice: "Label" : number
-   - Example:
-     pie title Distribution
-     "Category A" : 40
-     "Category B" : 30
-     "Category C" : 30
+2. RECORD/TABLE STYLE (for comparisons):
+     digraph G {
+       node [shape=record, fontname="Arial"];
+       a [label="{Category|Item 1|Item 2|Item 3}"];
+     }
 
-FORBIDDEN — never use these:
-- subgraph, classDiagram, stateDiagram, erDiagram, gantt, journey
-- Colons, semicolons, quotes, or parentheses INSIDE node labels
-- Backticks or markdown fences inside the diagram string
-- HTML tags or style/class definitions
-- Special unicode characters
+3. STYLING (include in EVERY diagram for good appearance):
+   Add these lines right after the opening brace:
+     rankdir=TB;
+     node [shape=box, style="rounded,filled", fillcolor="#d1fae5", fontname="Arial", fontsize=12];
+     edge [color="#059669", penwidth=1.5];
+   For different node colors, set fillcolor on individual nodes.
 
-RULES:
-1. Create exactly 4-5 slides
-2. First slide: overview flowchart of document (6-8 nodes)
-3. Include at least 2 flowcharts and 1 pie chart
-4. Base ALL content on the actual document — never fabricate
-5. Keep diagrams simple and valid — fewer nodes done correctly beats many nodes with errors
-6. Return ONLY the JSON array`;
+ABSOLUTELY FORBIDDEN:
+- Unicode arrows (→, ⟶, ⇒) — use ONLY ->
+- Markdown fences inside the diagram string
+- HTML-like labels (<...>) unless you are an expert — prefer simple label="text" instead
+- Unescaped double quotes inside labels — use single quotes or escape with backslash
+
+CONTENT RULES:
+1. Create exactly 5 slides
+2. Slide 1: Overview digraph of the MAIN TOPIC from the conversation (6-8 nodes)
+3. Slides 2-4: Key SUBTOPICS that the user asked about or the AI explained
+4. Slide 5: Summary or relationship diagram
+5. ALL diagram content must directly reflect what was DISCUSSED in the conversation
+6. Each diagram title should relate to a specific question or topic from the conversation
+7. Keep diagrams simple — 4-8 nodes per diagram
+8. Every diagram MUST be a valid digraph G { ... } block
+9. Return ONLY the JSON array`;
 
 /**
- * Sanitize a Mermaid diagram string to fix common LLM output issues.
+ * Detect if text looks like Mermaid syntax and convert to Graphviz DOT.
  */
-function sanitizeMermaidDiagram(diagram) {
-  let d = diagram.trim();
+function convertMermaidToDot(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  if (lines.length === 0) return null;
 
-  // Remove markdown fences if LLM wrapped the diagram
-  if (d.startsWith('```')) {
-    d = d.replace(/^```(?:mermaid)?\s*\n?/, '').replace(/\n?```\s*$/, '');
+  const first = lines[0].toLowerCase();
+  const isMermaid = /^(graph|flowchart)\s+(td|tb|lr|rl|bt)/i.test(first);
+  if (!isMermaid) return null;
+
+  const dirMatch = first.match(/\b(td|tb|lr|rl|bt)\b/i);
+  let rankdir = 'TB';
+  if (dirMatch) {
+    const d = dirMatch[1].toUpperCase();
+    if (d === 'LR') rankdir = 'LR';
+    else if (d === 'RL') rankdir = 'RL';
+    else if (d === 'BT') rankdir = 'BT';
+    else rankdir = 'TB';
   }
 
-  // Remove any HTML tags
-  d = d.replace(/<[^>]+>/g, '');
+  const nodeLabels = {};
+  const edges = [];
 
-  // Remove style/classDef lines
-  d = d.replace(/^\s*(style|classDef|class ).*$/gm, '');
+  for (let i = 1; i < lines.length; i++) {
+    let line = lines[i];
+    if (/^(subgraph|end|style|classDef|class )\b/i.test(line)) continue;
+    if (line.startsWith('%%')) continue;
+    line = line.replace(/[-=.]{1,3}>/g, '->');
 
-  // Fix common issues: curly quotes to straight
-  d = d.replace(/[\u201C\u201D]/g, '"').replace(/[\u2018\u2019]/g, "'");
+    const edgePattern = /^([\w]+)(?:\[([^\]]+)\])?\s*(?:->\s*(?:\|([^|]*)\|)?\s*([\w]+)(?:\[([^\]]+)\])?)?(.*)/;
+    const m = line.match(edgePattern);
+    if (m) {
+      const [, srcId, srcLabel, edgeLabel, tgtId, tgtLabel, rest] = m;
+      if (srcId && srcLabel) nodeLabels[srcId] = srcLabel.trim();
+      if (tgtId && tgtLabel) nodeLabels[tgtId] = tgtLabel.trim();
+      if (srcId && !nodeLabels[srcId]) nodeLabels[srcId] = srcId;
+      if (tgtId && !nodeLabels[tgtId]) nodeLabels[tgtId] = tgtId;
+      if (srcId && tgtId) edges.push([srcId, tgtId, edgeLabel?.trim() || null]);
 
-  // Convert unicode arrows to standard mermaid arrows
-  // ⟶ (U+27F6), → (U+2192), ⟹ (U+27F9), ⇒ (U+21D2), ➜ (U+279C), ➔ (U+2794)
-  d = d.replace(/[\u27F6\u2192\u27F9\u21D2\u279C\u2794\u2B95\u21E8]+/g, '-->');
-  // Em-dash/en-dash arrows: —> or –> to -->
-  d = d.replace(/[\u2014\u2013]>/g, '-->');
-  // Dotted unicode arrows ⤑ ⇢ to -.->
-  d = d.replace(/[\u2911\u21E2]+/g, '-.->');
-
-  // Remove semicolons at end of lines (common LLM mistake)
-  d = d.replace(/;\s*$/gm, '');
-
-  // Ensure the diagram starts with a valid directive
-  const firstLine = d.split('\n')[0].trim().toLowerCase();
-  const validStarts = ['graph ', 'flowchart ', 'sequencediagram', 'pie ', 'pie\n', 'pie\r'];
-  if (!validStarts.some(s => firstLine.startsWith(s))) {
-    // Try to salvage by prepending graph TD if it looks like flowchart nodes
-    if (d.includes('-->') || d.includes('---') || d.includes('-.->')) {
-      d = 'graph TD\n' + d;
+      if (rest && tgtId) {
+        let remaining = rest.trim();
+        let prevNode = tgtId;
+        while (remaining) {
+          const chainMatch = remaining.match(/^->\s*(?:\|([^|]*)\|)?\s*([\w]+)(?:\[([^\]]+)\])?(.*)/);  
+          if (!chainMatch) break;
+          const [, cEdgeLabel, cId, cLabel, cRest] = chainMatch;
+          if (cId && cLabel) nodeLabels[cId] = cLabel.trim();
+          if (cId && !nodeLabels[cId]) nodeLabels[cId] = cId;
+          if (prevNode && cId) edges.push([prevNode, cId, cEdgeLabel?.trim() || null]);
+          prevNode = cId;
+          remaining = (cRest || '').trim();
+        }
+      }
     }
   }
 
-  return d;
+  if (Object.keys(nodeLabels).length === 0) return null;
+
+  let dot = 'digraph G {\n';
+  dot += `  rankdir=${rankdir};\n`;
+  dot += '  node [shape=box, style="rounded,filled", fillcolor="#d1fae5", fontname="Arial", fontsize=12];\n';
+  dot += '  edge [color="#059669", penwidth=1.5];\n';
+  for (const [id, label] of Object.entries(nodeLabels)) {
+    dot += `  ${id} [label="${label.replace(/"/g, "'")}"];\n`;
+  }
+  for (const [from, to, label] of edges) {
+    dot += label
+      ? `  ${from} -> ${to} [label="${label.replace(/"/g, "'")}"];\n`
+      : `  ${from} -> ${to};\n`;
+  }
+  dot += '}';
+  return dot;
+}
+
+/**
+ * Sanitize a Graphviz DOT diagram string to fix common LLM output issues.
+ * Also auto-converts Mermaid syntax to DOT as a fallback.
+ */
+function sanitizeDotDiagram(diagram) {
+  let d = diagram.trim();
+
+  // Remove markdown fences
+  if (d.startsWith('```')) {
+    d = d.replace(/^```(?:dot|graphviz|mermaid)?\s*\n?/, '').replace(/\n?```\s*$/, '');
+  }
+
+  // Curly quotes → straight
+  d = d.replace(/[\u201C\u201D]/g, '"').replace(/[\u2018\u2019]/g, "'");
+
+  // Convert unicode arrows to ->
+  d = d.replace(/[\u27F6\u2192\u27F9\u21D2\u279C\u2794\u2B95\u21E8\u27A1\u2B9E\u279E\u27A4]+/g, '->');
+  d = d.replace(/[\u2014\u2013]+>/g, '->');
+  d = d.replace(/\u2212+>/g, '->');
+  d = d.replace(/-{2,}>/g, '->');
+
+  // Detect and convert Mermaid syntax to DOT
+  const converted = convertMermaidToDot(d);
+  if (converted) return converted;
+
+  // Already DOT — ensure wrapper
+  const lower = d.trimStart().toLowerCase();
+  if (!lower.startsWith('digraph') && !lower.startsWith('graph') && !lower.startsWith('strict')) {
+    if (d.includes('->') || d.includes('--')) {
+      d = 'digraph G {\n' + d + '\n}';
+    }
+  }
+
+  d = d.split('\n').filter(l => l.trim()).join('\n');
+  return d.trim();
 }
 
 /**
@@ -250,6 +322,17 @@ async function callGroqWithRetry(params, maxRetries = 3) {
         );
       }
 
+      if (
+        status === 413 ||
+        errMsg.includes('input tokens per minute') ||
+        errMsg.includes('Request too large')
+      ) {
+        throw new Error(
+          'This document is too large for the current AI usage limit. ' +
+          'Please upload a shorter document or split it into smaller files.'
+        );
+      }
+
       // Request timeout or server error — retry
       if (status === 408 || status === 503 || status === 502 || status >= 500) {
         const wait = 2 ** attempt * 2000;
@@ -310,7 +393,7 @@ async function analyzeDocument(documentText, fileName) {
 }
 
 /**
- * Generate visual slides with Mermaid diagrams based on document content and chat history.
+ * Generate visual slides with Graphviz DOT diagrams based on document content and chat history.
  */
 async function generateSlides(documentText, chatHistory) {
   const truncatedDoc = smartTruncate(documentText, 100_000); // smaller budget since slides need less doc context
@@ -325,7 +408,7 @@ async function generateSlides(documentText, chatHistory) {
     { role: 'system', content: SLIDES_SYSTEM_PROMPT },
     {
       role: 'user',
-      content: `Here is the document:\n\n---\n${truncatedDoc}\n---\n\nHere is the conversation about this document:\n\n---\n${conversationText}\n---\n\nCreate a visual slide presentation with Mermaid diagrams that explains the key topics from this document and conversation. Return ONLY a valid JSON array.`,
+      content: `Here is the document:\n\n---\n${truncatedDoc}\n---\n\nHere is the conversation between the user and AI about this document:\n\n---\n${conversationText}\n---\n\nCreate diagrams that visualize the specific topics discussed in this conversation. Focus on what the user asked about and what the AI explained. Return ONLY a valid JSON array.`,
     },
   ];
 
@@ -355,7 +438,7 @@ async function generateSlides(documentText, chatHistory) {
       .filter((s) => s && s.title && s.diagram && s.explanation)
       .map((s) => ({
         title: String(s.title).slice(0, 100),
-        diagram: sanitizeMermaidDiagram(String(s.diagram)),
+        diagram: sanitizeDotDiagram(String(s.diagram)),
         explanation: String(s.explanation).slice(0, 500),
       }));
   } catch (parseErr) {

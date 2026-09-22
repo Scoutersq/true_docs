@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight, Maximize2, Minimize2, Layers } from 'lucide-react';
-import MermaidDiagram from './MermaidDiagram';
+import GraphvizDiagram from './GraphvizDiagram';
 import '../styles/DiagramPanel.css';
 
 const slideVariants = {
@@ -140,7 +140,7 @@ export default function DiagramPanel({ slides, onClose }) {
               <h3 className="diagram-panel__slide-title">{slide.title}</h3>
 
               <div className="diagram-panel__diagram-area">
-                <MermaidDiagram chart={slide.diagram} />
+                <GraphvizDiagram dot={slide.diagram} />
               </div>
 
               <p className="diagram-panel__explanation">{slide.explanation}</p>

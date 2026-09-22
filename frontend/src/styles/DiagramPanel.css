@@ -150,15 +150,16 @@
   border-radius: var(--radius-lg);
   overflow: auto;
   min-height: 200px;
+  position: relative;
 }
 
-.diagram-panel__diagram-area .mermaid-diagram {
+.diagram-panel__diagram-area .graphviz-diagram {
   width: 100%;
   display: flex;
   justify-content: center;
 }
 
-.diagram-panel__diagram-area .mermaid-diagram svg {
+.diagram-panel__diagram-area .graphviz-diagram svg {
   max-width: 100%;
   height: auto;
 }
@@ -241,19 +242,19 @@
   background: var(--text-tertiary);
 }
 
-/* ─── Mermaid shared styles ───────────────────────────────── */
-.mermaid-diagram {
+/* ─── Graphviz shared styles ──────────────────────────────── */
+.graphviz-diagram {
   display: flex;
   justify-content: center;
   overflow: auto;
 }
 
-.mermaid-diagram svg {
+.graphviz-diagram svg {
   max-width: 100%;
   height: auto;
 }
 
-.mermaid-error {
+.graphviz-error {
   background: rgba(220, 38, 38, 0.04);
   border: 1px solid rgba(220, 38, 38, 0.15);
   border-radius: var(--radius-md);
@@ -262,7 +263,7 @@
   width: 100%;
 }
 
-.mermaid-error__label {
+.graphviz-error__label {
   font-size: 0.7rem;
   font-weight: 600;
   color: var(--text-tertiary);
@@ -271,7 +272,7 @@
   letter-spacing: 0.05em;
 }
 
-.mermaid-error__code {
+.graphviz-error__code {
   font-family: var(--font-mono);
   font-size: 0.75rem;
   color: var(--text-secondary);
@@ -279,7 +280,7 @@
   margin: 0;
 }
 
-.mermaid-loading {
+.graphviz-loading {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
@@ -289,7 +290,7 @@
   justify-content: center;
 }
 
-.mermaid-loading__spinner {
+.graphviz-loading__spinner {
   width: 16px;
   height: 16px;
   border: 2px solid var(--border-default);

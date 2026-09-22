@@ -25,7 +25,7 @@ function formatFileSize(bytes) {
 }
 
 export default function UploadZone() {
-  const { uploadedFile, isFileProcessing, isFileReady, handleFileUpload, resetDocument } = useApp();
+  const { uploadedFile, isFileProcessing, isFileReady, handleFileUpload, resetDocument, uploadProgress } = useApp();
 
   const onDrop = useCallback(
     (acceptedFiles) => {
@@ -54,9 +54,21 @@ export default function UploadZone() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
         >
-          <div className="upload-zone__spinner" />
+          <div className="upload-zone__progress-container">
+            <div className="upload-zone__progress-bar">
+              <motion.div
+                className="upload-zone__progress-fill"
+                initial={{ width: 0 }}
+                animate={{ width: `${uploadProgress}%` }}
+                transition={{ duration: 0.3, ease: 'easeOut' }}
+              />
+            </div>
+            <p className="upload-zone__progress-text">{uploadProgress}%</p>
+          </div>
           <div className="upload-zone__processing-text">
-            <p className="upload-zone__processing-title">Analyzing your document...</p>
+            <p className="upload-zone__processing-title">
+              {uploadProgress < 100 ? 'Uploading...' : 'Analyzing your document...'}
+            </p>
             <p className="upload-zone__processing-sub">{uploadedFile?.name}</p>
           </div>
         </motion.div>

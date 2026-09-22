@@ -16,10 +16,19 @@
   transition: all var(--duration-normal) var(--ease-out-expo);
 }
 
+html[data-theme='dark'] .navbar {
+  background: rgba(15, 23, 42, 0.8);
+}
+
 .navbar.scrolled {
   background: rgba(255, 255, 255, 0.95);
   border-bottom-color: var(--border-default);
   box-shadow: 0 1px 12px rgba(0, 0, 0, 0.04);
+}
+
+html[data-theme='dark'] .navbar.scrolled {
+  background: rgba(15, 23, 42, 0.95);
+  box-shadow: 0 1px 12px rgba(0, 0, 0, 0.3);
 }
 
 .navbar__brand {
@@ -131,6 +140,32 @@
 
 .navbar__cta:active {
   transform: translateY(0px);
+}
+
+/* Theme toggle button */
+.navbar__theme-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+  padding: 0;
+}
+
+.navbar__theme-btn:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--border-accent);
+  color: var(--accent);
+}
+
+.navbar__theme-btn:active {
+  transform: scale(0.95);
 }
 
 /* User section */

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FileText, Menu, X, LogOut, LayoutDashboard } from 'lucide-react';
+import { FileText, Menu, X, LogOut, LayoutDashboard, Moon, Sun } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import '../styles/Navbar.css';
@@ -12,7 +12,7 @@ export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated, logout } = useAuth();
-  const { startNewDocument } = useApp();
+  const { startNewDocument, theme, setTheme } = useApp();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -99,6 +99,16 @@ export default function Navbar() {
             Log In
           </button>
         )}
+
+        {/* Theme toggle */}
+        <button
+          className="navbar__theme-btn"
+          onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+          title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+        >
+          {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+        </button>
+
         <button
           className="navbar__cta"
           onClick={handleCtaClick}

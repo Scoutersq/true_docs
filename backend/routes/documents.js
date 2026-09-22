@@ -29,7 +29,7 @@ router.post('/upload', authMiddleware, upload.single('file'), async (req, res) =
     // Extract text in the background (don't block the response)
     res.status(201).json({
       document: {
-        id: doc._id,
+        id: doc._id.toString(),
         originalName: doc.originalName,
         fileSize: doc.fileSize,
         status: doc.status,
@@ -72,9 +72,8 @@ router.post('/upload', authMiddleware, upload.single('file'), async (req, res) =
       console.error('Document processing error:', err.message || err);
       doc.status = 'error';
       // Show a user-friendly message, not raw stack traces
-      doc.errorMessage = err.message && err.message.length < 300
-        ? err.message
-        : 'Failed to process the document. The file may be too large or in an unsupported format.';
+      doc.errorMessage = err.message ||
+        'Failed to process the document. The file may be too large or in an unsupported format.';
       await doc.save();
     }
   } catch (err) {
