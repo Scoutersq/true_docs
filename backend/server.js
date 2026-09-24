@@ -12,6 +12,10 @@ const chatRoutes = require('./routes/chat');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const allowedOrigins = (process.env.CLIENT_URL || '')
+  .split(',')
+  .map((url) => url.trim().replace(/\/$/, ''))
+  .filter(Boolean);
 
 // ─── Connect to MongoDB ─────────────────────────────────────────────
 connectDB();
@@ -24,8 +28,8 @@ app.use(
       if (!origin) return callback(null, true);
       // Allow any localhost port
       if (/^http:\/\/localhost:\d+$/.test(origin)) return callback(null, true);
-      // Allow the configured CLIENT_URL
-      if (origin === process.env.CLIENT_URL) return callback(null, true);
+      // Allow one or more configured frontend URLs in development and production.
+      if (allowedOrigins.includes(origin)) return callback(null, true);
       callback(new Error('Not allowed by CORS'));
     },
     credentials: true,

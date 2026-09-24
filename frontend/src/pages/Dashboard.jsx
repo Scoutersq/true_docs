@@ -22,9 +22,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
+import { API_URL } from '../config/api';
 import '../styles/Dashboard.css';
-
-const API_URL = 'http://localhost:5000';
 
 function getToken() {
   return localStorage.getItem('token');

@@ -1,4 +1,27 @@
-# React + Vite
+# TrueDocs frontend
+
+## Deployment configuration
+
+Set `VITE_API_URL` in the frontend hosting provider to the public backend URL, for example:
+
+`VITE_API_URL=https://api.example.com`
+
+The backend must have these environment variables configured:
+
+- `CLIENT_URL`: the public frontend URL. Multiple frontend URLs may be separated by commas.
+- `SERVER_URL`: the public backend URL, for example `https://api.example.com`.
+- `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
+- `SESSION_SECRET`, `JWT_SECRET`, and `MONGODB_URI`.
+
+In Google Cloud Console, add this exact authorized redirect URI:
+
+`https://api.example.com/api/auth/google/callback`
+
+After changing `VITE_API_URL`, rebuild and redeploy the frontend because Vite injects it at build time.
+
+## Local development
+
+The frontend defaults to `http://localhost:5000` when running Vite locally. Keep the backend's local `CLIENT_URL` and `SERVER_URL` values aligned with the local frontend and backend URLs.
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
