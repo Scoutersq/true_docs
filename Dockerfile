@@ -25,6 +25,7 @@ RUN npm ci --omit=dev && npm cache clean --force
 COPY backend/ ./
 RUN mkdir -p /app/backend/uploads
 
+RUN rm -rf /usr/share/nginx/html/*
 COPY --from=frontend-build /app/frontend/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY start.sh /usr/local/bin/start-app
